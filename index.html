@@ -1,583 +1,1172 @@
-
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>PulseStack Engage - Customer Engagement Dashboard</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NexusHQ — Customer Observability</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Barlow+Condensed:wght@300;400;500;600;700&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-    :root {
-      --bg: #081523;
-      --panel: #10253a;
-      --panel-2: #16324f;
-      --text: #e8f4ff;
-      --muted: #9db8cf;
-      --accent: #19d3c5;
-      --accent-2: #4ba3ff;
-      --warn: #ffb020;
-      --danger: #ff5a73;
-      --ok: #39d98a;
-      --radius: 14px;
-      --shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-    }
+  :root {
+    --bg:        #090d13;
+    --surface:   #0e1520;
+    --surface2:  #141d2b;
+    --border:    #1e2d42;
+    --border2:   #243348;
+    --teal:      #00d4aa;
+    --teal-dim:  #00a884;
+    --teal-glow: rgba(0,212,170,0.12);
+    --amber:     #f5a623;
+    --amber-dim: rgba(245,166,35,0.15);
+    --red:       #f04040;
+    --red-dim:   rgba(240,64,64,0.15);
+    --blue:      #3b82f6;
+    --blue-dim:  rgba(59,130,246,0.15);
+    --purple:    #a78bfa;
+    --text:      #c9d8ec;
+    --text-muted:#5a7294;
+    --text-dim:  #3a5070;
+    --mono:      'IBM Plex Mono', monospace;
+    --head:      'Barlow Condensed', sans-serif;
+    --body:      'Barlow', sans-serif;
+  }
 
- 
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 14px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
 
- 
+  /* ─── Scrollbar ─────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
 
-    body {
-      margin: 0;
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      color: var(--text);
-      background:
-        radial-gradient(1200px 700px at 95% -10%, rgba(75, 163, 255, 0.22), transparent 60%),
-        radial-gradient(900px 500px at -10% 110%, rgba(25, 211, 197, 0.2), transparent 55%),
-        linear-gradient(170deg, #06111d 0%, #081523 45%, #0b1f33 100%);
-      min-height: 100vh;
-      padding: 20px;
-    }
+  /* ─── Top Nav ───────────────────────────────── */
+  .topbar {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 28px;
+    height: 56px;
+    backdrop-filter: blur(10px);
+  }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .brand-logo {
+    width: 28px; height: 28px;
+    background: var(--teal);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    flex-shrink: 0;
+    box-shadow: 0 0 16px rgba(0,212,170,0.5);
+  }
+  .brand-name {
+    font-family: var(--head);
+    font-size: 20px; font-weight: 700;
+    letter-spacing: 2px;
+    color: #fff;
+    text-transform: uppercase;
+  }
+  .brand-tag {
+    font-family: var(--mono);
+    font-size: 9px; font-weight: 400;
+    color: var(--teal);
+    letter-spacing: 1px;
+    border: 1px solid var(--teal);
+    padding: 2px 6px;
+    border-radius: 2px;
+    opacity: 0.8;
+  }
+  .topbar-right {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .live-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--teal);
+    box-shadow: 0 0 8px var(--teal);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%,100% { opacity: 1; } 50% { opacity: 0.3; }
+  }
+  .live-label {
+    font-family: var(--mono); font-size: 10px;
+    color: var(--teal); letter-spacing: 1px;
+  }
+  .timestamp {
+    font-family: var(--mono); font-size: 10px;
+    color: var(--text-muted);
+  }
 
- 
+  /* ─── Filters Bar ───────────────────────────── */
+  .filters {
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 28px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  .filter-label {
+    font-family: var(--mono); font-size: 9px;
+    color: var(--text-dim); letter-spacing: 1.5px; text-transform: uppercase;
+    margin-right: 4px;
+  }
+  .filter-group { display: flex; align-items: center; gap: 6px; }
+  .filter-btn {
+    font-family: var(--mono); font-size: 11px;
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--text-muted);
+    padding: 4px 10px; border-radius: 3px;
+    cursor: pointer;
+    transition: all .15s;
+    letter-spacing: 0.5px;
+  }
+  .filter-btn:hover { border-color: var(--teal-dim); color: var(--teal); }
+  .filter-btn.active {
+    background: var(--teal-glow);
+    border-color: var(--teal);
+    color: var(--teal);
+    box-shadow: 0 0 8px rgba(0,212,170,0.1);
+  }
+  .filter-sep {
+    width: 1px; height: 20px;
+    background: var(--border);
+    margin: 0 4px;
+  }
+  .filter-select {
+    font-family: var(--mono); font-size: 11px;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    padding: 4px 28px 4px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235a7294'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+  }
+  .filter-select:focus { outline: none; border-color: var(--teal); }
 
-    .container {
-      max-width: 1240px;
-      margin: 0 auto;
-      display: grid;
-      gap: 16px;
-    }
+  /* ─── Main Layout ───────────────────────────── */
+  .main {
+    padding: 24px 28px 40px;
+    display: flex; flex-direction: column; gap: 20px;
+  }
 
- 
+  /* ─── Section Label ─────────────────────────── */
+  .section-label {
+    font-family: var(--mono); font-size: 9px; font-weight: 500;
+    color: var(--text-dim); letter-spacing: 2px; text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-label::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
 
-    .header {
-      background: linear-gradient(125deg, rgba(25, 211, 197, 0.12), rgba(75, 163, 255, 0.15));
-      border: 1px solid rgba(157, 184, 207, 0.2);
-      border-radius: var(--radius);
-      padding: 22px;
-      box-shadow: var(--shadow);
-    }
+  /* ─── KPI Cards Row ─────────────────────────── */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+  @media(max-width:900px) { .kpi-row { grid-template-columns: repeat(2,1fr); } }
 
- 
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color .2s, transform .2s;
+    cursor: default;
+  }
+  .kpi-card:hover {
+    border-color: var(--border2);
+    transform: translateY(-1px);
+  }
+  .kpi-card::before {
+    content: ''; position: absolute;
+    top: 0; left: 0; right: 0; height: 2px;
+    background: var(--accent-color, var(--teal));
+    opacity: 0.7;
+  }
+  .kpi-card.amber::before { --accent-color: var(--amber); }
+  .kpi-card.red::before   { --accent-color: var(--red); }
+  .kpi-card.blue::before  { --accent-color: var(--blue); }
 
-    .header h1 {
-      margin: 0;
-      font-size: clamp(1.4rem, 2vw, 2.1rem);
-      letter-spacing: 0.3px;
-    }
+  .kpi-title {
+    font-family: var(--mono); font-size: 9px;
+    color: var(--text-muted); letter-spacing: 1.5px; text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .kpi-value {
+    font-family: var(--head); font-size: 38px; font-weight: 600;
+    line-height: 1; color: #fff;
+    margin-bottom: 8px;
+  }
+  .kpi-value span.unit {
+    font-size: 18px; font-weight: 300; color: var(--text-muted);
+    margin-left: 2px;
+  }
+  .kpi-delta {
+    font-family: var(--mono); font-size: 10px;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .kpi-delta.up { color: var(--teal); }
+  .kpi-delta.down { color: var(--red); }
+  .kpi-delta.warn { color: var(--amber); }
+  .kpi-sub {
+    font-family: var(--body); font-size: 11px;
+    color: var(--text-muted); margin-top: 4px;
+  }
+  .kpi-sparkline {
+    position: absolute; bottom: 0; right: 0; opacity: 0.12;
+    pointer-events: none;
+  }
 
- 
+  /* ─── Grid Rows ─────────────────────────────── */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .grid-3 {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 14px;
+  }
+  .grid-2-1 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  @media(max-width:900px) {
+    .grid-2, .grid-3, .grid-2-1 { grid-template-columns: 1fr; }
+  }
 
-    .header p {
-      margin: 8px 0 0;
-      color: var(--muted);
-      max-width: 840px;
-      line-height: 1.45;
-    }
+  /* ─── Panel ─────────────────────────────────── */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .panel-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .panel-title {
+    font-family: var(--head); font-size: 13px; font-weight: 600;
+    letter-spacing: 1px; text-transform: uppercase;
+    color: #d0e0f0;
+  }
+  .panel-subtitle {
+    font-family: var(--mono); font-size: 9px;
+    color: var(--text-muted); margin-top: 3px;
+    letter-spacing: 0.5px;
+  }
+  .panel-badge {
+    font-family: var(--mono); font-size: 9px;
+    padding: 3px 8px; border-radius: 2px;
+    letter-spacing: 1px; text-transform: uppercase;
+  }
+  .panel-badge.teal { background: var(--teal-glow); color: var(--teal); border: 1px solid rgba(0,212,170,0.2); }
+  .panel-badge.amber { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(245,166,35,0.2); }
+  .panel-badge.red { background: var(--red-dim); color: var(--red); border: 1px solid rgba(240,64,64,0.2); }
 
- 
+  /* ─── Chart containers ──────────────────────── */
+  .chart-wrap { position: relative; }
+  .chart-wrap canvas { max-height: 220px; }
 
-    .filters, .kpis, .sections {
-      display: grid;
-      gap: 12px;
-    }
+  /* ─── Journey Funnel ────────────────────────── */
+  .funnel { display: flex; flex-direction: column; gap: 6px; }
+  .funnel-step {
+    position: relative;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .funnel-bar-wrap {
+    flex: 1; background: var(--surface2);
+    border-radius: 2px; height: 32px;
+    overflow: hidden; position: relative;
+  }
+  .funnel-bar {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 1s cubic-bezier(0.16,1,0.3,1);
+    position: relative;
+    display: flex; align-items: center; padding-left: 10px;
+  }
+  .funnel-bar-label {
+    font-family: var(--mono); font-size: 10px; font-weight: 500;
+    color: rgba(0,0,0,0.8); white-space: nowrap;
+    position: relative; z-index: 1;
+  }
+  .funnel-step-name {
+    font-family: var(--mono); font-size: 9px;
+    color: var(--text-muted); width: 110px; text-align: right;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+  .funnel-pct {
+    font-family: var(--head); font-size: 16px; font-weight: 600;
+    color: #fff; width: 46px; text-align: right;
+    flex-shrink: 0;
+  }
+  .funnel-drop {
+    font-family: var(--mono); font-size: 9px;
+    color: var(--red); width: 36px; text-align: right; flex-shrink: 0;
+  }
 
- 
+  /* ─── Communication Table ───────────────────── */
+  .comm-table { width: 100%; border-collapse: collapse; }
+  .comm-table th {
+    font-family: var(--mono); font-size: 9px; font-weight: 500;
+    color: var(--text-dim); letter-spacing: 1.5px; text-transform: uppercase;
+    padding: 0 8px 10px; text-align: left; border-bottom: 1px solid var(--border);
+  }
+  .comm-table td {
+    font-family: var(--mono); font-size: 11px;
+    color: var(--text); padding: 9px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .comm-table tr:last-child td { border-bottom: none; }
+  .comm-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .bar-mini {
+    display: inline-block; height: 4px;
+    border-radius: 2px; vertical-align: middle;
+    margin-right: 6px;
+  }
 
-    .filters {
-      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-    }
+  /* ─── Retention / At-risk ───────────────────── */
+  .risk-list { display: flex; flex-direction: column; gap: 6px; }
+  .risk-row {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 14px;
+    display: flex; align-items: center; gap: 12px;
+    transition: border-color .15s;
+  }
+  .risk-row:hover { border-color: var(--border2); }
+  .risk-row.critical { border-left: 3px solid var(--red); }
+  .risk-row.warning  { border-left: 3px solid var(--amber); }
+  .risk-row.healthy  { border-left: 3px solid var(--teal); }
+  .risk-company {
+    font-family: var(--head); font-size: 13px; font-weight: 600;
+    color: #d8e8f8; flex: 1; letter-spacing: 0.5px;
+  }
+  .risk-score {
+    font-family: var(--mono); font-size: 13px; font-weight: 600;
+    width: 36px; text-align: right;
+  }
+  .risk-score.critical { color: var(--red); }
+  .risk-score.warning  { color: var(--amber); }
+  .risk-score.healthy  { color: var(--teal); }
+  .risk-meta {
+    font-family: var(--mono); font-size: 9px;
+    color: var(--text-dim); width: 80px; text-align: right;
+  }
+  .risk-tag {
+    font-family: var(--mono); font-size: 8px; letter-spacing: 1px;
+    padding: 2px 6px; border-radius: 2px; text-transform: uppercase;
+  }
+  .risk-tag.critical { background: var(--red-dim); color: var(--red); }
+  .risk-tag.warning  { background: var(--amber-dim); color: var(--amber); }
+  .risk-tag.healthy  { background: var(--teal-glow); color: var(--teal); }
 
- 
+  /* ─── Engagement Score Dial ─────────────────── */
+  .dial-wrap {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 8px 0;
+  }
+  .dial-canvas-wrap { position: relative; width: 160px; height: 90px; margin-bottom: 8px; }
+  .dial-value {
+    position: absolute; bottom: -2px; left: 50%; transform: translateX(-50%);
+    font-family: var(--head); font-size: 32px; font-weight: 700; color: #fff;
+    line-height: 1;
+  }
+  .dial-label {
+    font-family: var(--mono); font-size: 9px;
+    color: var(--text-muted); letter-spacing: 1.5px; text-transform: uppercase;
+    margin-top: 4px;
+  }
+  .dial-legend {
+    display: flex; gap: 14px; margin-top: 14px;
+  }
+  .dial-legend-item {
+    display: flex; align-items: center; gap: 5px;
+    font-family: var(--mono); font-size: 9px; color: var(--text-muted);
+  }
+  .dial-legend-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+  }
 
-    .card {
-      background: linear-gradient(155deg, var(--panel), var(--panel-2));
-      border: 1px solid rgba(157, 184, 207, 0.15);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 14px;
-    }
+  /* ─── Ticket Trend ──────────────────────────── */
+  .ticket-stats {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px; margin-bottom: 16px;
+  }
+  .ticket-stat {
+    background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 4px;
+    padding: 10px 12px; text-align: center;
+  }
+  .ticket-stat-val {
+    font-family: var(--head); font-size: 24px; font-weight: 600;
+    color: #fff;
+  }
+  .ticket-stat-lbl {
+    font-family: var(--mono); font-size: 8px;
+    color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase;
+    margin-top: 3px;
+  }
 
- 
+  /* ─── Footer ─────────────────────────────────── */
+  .footer {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 14px 28px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .footer-text {
+    font-family: var(--mono); font-size: 9px;
+    color: var(--text-dim); letter-spacing: 1px;
+  }
+  .footer-members {
+    font-family: var(--mono); font-size: 9px;
+    color: var(--text-dim); letter-spacing: 0.5px;
+  }
 
-    .filter label {
-      display: block;
-      font-size: 0.82rem;
-      color: var(--muted);
-      margin-bottom: 7px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
- 
-
-    select, input[type="date"] {
-      width: 100%;
-      padding: 10px 10px;
-      border-radius: 10px;
-      border: 1px solid rgba(157, 184, 207, 0.2);
-      background: rgba(8, 21, 35, 0.7);
-      color: var(--text);
-      outline: none;
-      font-size: 0.95rem;
-    }
-
- 
-
-    .kpis {
-      grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
-    }
-
- 
-
-    .kpi .title {
-      font-size: 0.8rem;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-    }
-
- 
-
-    .kpi .value {
-      margin-top: 7px;
-      font-size: 1.7rem;
-      font-weight: 700;
-    }
-
- 
-
-    .kpi .delta {
-      margin-top: 6px;
-      font-size: 0.86rem;
-      color: var(--ok);
-    }
-
- 
-
-    .sections {
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    }
-
- 
-
-    .section-title {
-      margin: 0 0 10px;
-      font-size: 1rem;
-      letter-spacing: 0.02em;
-    }
-
- 
-
-    .chart {
-      width: 100%;
-      height: 160px;
-      border-radius: 10px;
-      background: rgba(5, 14, 26, 0.45);
-      border: 1px solid rgba(157, 184, 207, 0.15);
-      position: relative;
-      overflow: hidden;
-    }
-
- 
-
-    .bar-wrap {
-      display: grid;
-      gap: 8px;
-    }
-
- 
-
-    .bar {
-      display: grid;
-      grid-template-columns: 120px 1fr 56px;
-      align-items: center;
-      gap: 10px;
-      font-size: 0.9rem;
-    }
-
- 
-
-    .track {
-      background: rgba(8, 21, 35, 0.75);
-      border-radius: 999px;
-      height: 9px;
-      overflow: hidden;
-    }
-
- 
-
-    .fill {
-      height: 100%;
-      border-radius: 999px;
-      background: linear-gradient(90deg, var(--accent), var(--accent-2));
-    }
-
- 
-
-    .signals {
-      display: grid;
-      gap: 8px;
-    }
-
- 
-
-    .signal {
-      padding: 10px;
-      border-radius: 10px;
-      background: rgba(8, 21, 35, 0.56);
-      border: 1px solid rgba(157, 184, 207, 0.18);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.9rem;
-    }
-
- 
-
-    .pill {
-      border-radius: 999px;
-      padding: 3px 8px;
-      font-size: 0.78rem;
-      font-weight: 600;
-    }
-
- 
-
-    .risk-high { background: rgba(255, 90, 115, 0.24); color: #ffafbe; }
-    .risk-med { background: rgba(255, 176, 32, 0.24); color: #ffd28e; }
-    .risk-low { background: rgba(57, 217, 138, 0.2); color: #9ef0c6; }
-
- 
-
-    .footer {
-      color: var(--muted);
-      font-size: 0.86rem;
-      line-height: 1.4;
-    }
-
- 
-
-    .members {
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px solid rgba(157, 184, 207, 0.15);
-    }
-
- 
-
-    @media (max-width: 700px) {
-      body { padding: 12px; }
-      .bar { grid-template-columns: 90px 1fr 44px; font-size: 0.82rem; }
-    }
+  /* ─── Animations ─────────────────────────────── */
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .kpi-card  { animation: fade-up .4s ease both; }
+  .kpi-card:nth-child(1) { animation-delay: .05s; }
+  .kpi-card:nth-child(2) { animation-delay: .10s; }
+  .kpi-card:nth-child(3) { animation-delay: .15s; }
+  .kpi-card:nth-child(4) { animation-delay: .20s; }
+  .panel { animation: fade-up .4s ease both; animation-delay: .25s; }
 </style>
 </head>
 <body>
-<main class="container">
-<section class="header">
-<h1>PulseStack Engage: Customer Engagement Dashboard</h1>
-<p>
-        Scenario: PulseStack is a B2B SaaS platform serving SMB operations teams with workflow automation,
-        analytics, and customer messaging. This dashboard helps monitor engagement, journey progress,
-        communication performance, and retention risk.
-</p>
-</section>
 
- 
-
-    <section class="filters">
-<div class="card filter">
-<label for="startDate">Start Date</label>
-<input type="date" id="startDate" />
+<!-- TOP NAV -->
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-logo"></div>
+    <div class="brand-name">NexusHQ</div>
+    <div class="brand-tag">OBSERVABILITY</div>
+  </div>
+  <div class="topbar-right">
+    <div class="live-dot"></div>
+    <span class="live-label">LIVE</span>
+    <div class="filter-sep"></div>
+    <span class="timestamp" id="clock">--:--:-- UTC</span>
+  </div>
 </div>
-<div class="card filter">
-<label for="endDate">End Date</label>
-<input type="date" id="endDate" />
+
+<!-- FILTERS -->
+<div class="filters">
+  <span class="filter-label">Period</span>
+  <div class="filter-group" id="period-group">
+    <button class="filter-btn" data-period="7D">7D</button>
+    <button class="filter-btn active" data-period="30D">30D</button>
+    <button class="filter-btn" data-period="90D">90D</button>
+    <button class="filter-btn" data-period="12M">12M</button>
+  </div>
+  <div class="filter-sep"></div>
+  <span class="filter-label">Segment</span>
+  <select class="filter-select" id="segment-select">
+    <option value="all">All Segments</option>
+    <option value="enterprise">Enterprise</option>
+    <option value="midmarket">Mid-Market</option>
+    <option value="smb">SMB</option>
+  </select>
+  <div class="filter-sep"></div>
+  <span class="filter-label">Cohort</span>
+  <select class="filter-select" id="cohort-select">
+    <option value="all">All Cohorts</option>
+    <option value="new">New (0–30 days)</option>
+    <option value="growing">Growing (31–90 days)</option>
+    <option value="mature">Mature (90+ days)</option>
+  </select>
 </div>
-<div class="card filter">
-<label for="segment">Customer Segment</label>
-<select id="segment">
-<option value="all">All Segments</option>
-<option value="startup">Startup</option>
-<option value="mid-market">Mid-Market</option>
-<option value="enterprise-lite">Enterprise-Lite</option>
-</select>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+
+  <!-- KPI CARDS -->
+  <div>
+    <div class="section-label">Engagement Overview</div>
+    <div class="kpi-row" id="kpi-row">
+
+      <div class="kpi-card">
+        <div class="kpi-title">DAU / MAU Ratio</div>
+        <div class="kpi-value" id="kv-daumau">38<span class="unit">%</span></div>
+        <div class="kpi-delta up" id="kd-daumau">▲ +3.2pp vs prev period</div>
+        <div class="kpi-sub">Stickiness score</div>
+        <svg class="kpi-sparkline" width="90" height="50" viewBox="0 0 90 50">
+          <polyline points="0,40 15,35 30,38 45,22 60,18 75,12 90,8"
+            fill="none" stroke="var(--teal)" stroke-width="1.5"/>
+        </svg>
+      </div>
+
+      <div class="kpi-card amber">
+        <div class="kpi-title">Avg Session Duration</div>
+        <div class="kpi-value" id="kv-session">14<span class="unit">m</span></div>
+        <div class="kpi-delta warn" id="kd-session">▼ −0.8m vs prev period</div>
+        <div class="kpi-sub">Median across active users</div>
+        <svg class="kpi-sparkline" width="90" height="50" viewBox="0 0 90 50">
+          <polyline points="0,18 15,22 30,16 45,24 60,20 75,28 90,25"
+            fill="none" stroke="var(--amber)" stroke-width="1.5"/>
+        </svg>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-title">Feature Adoption Rate</div>
+        <div class="kpi-value" id="kv-feat">62<span class="unit">%</span></div>
+        <div class="kpi-delta up" id="kd-feat">▲ +7pp vs prev period</div>
+        <div class="kpi-sub">Core features activated</div>
+        <svg class="kpi-sparkline" width="90" height="50" viewBox="0 0 90 50">
+          <polyline points="0,42 15,38 30,34 45,30 60,22 75,16 90,10"
+            fill="none" stroke="var(--teal)" stroke-width="1.5"/>
+        </svg>
+      </div>
+
+      <div class="kpi-card red">
+        <div class="kpi-title">At-Risk Accounts</div>
+        <div class="kpi-value" id="kv-risk">9<span class="unit"></span></div>
+        <div class="kpi-delta down" id="kd-risk">▲ +2 vs prev period</div>
+        <div class="kpi-sub">Score &lt; 35 threshold</div>
+        <svg class="kpi-sparkline" width="90" height="50" viewBox="0 0 90 50">
+          <polyline points="0,35 15,32 30,36 45,30 60,26 75,20 90,14"
+            fill="none" stroke="var(--red)" stroke-width="1.5"/>
+        </svg>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ROW 2: DAU/MAU Trend + Feature Adoption -->
+  <div class="grid-2">
+
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">DAU / MAU Trend</div>
+          <div class="panel-subtitle">Daily active ÷ monthly active (rolling 30D)</div>
+        </div>
+        <div class="panel-badge teal">STICKINESS</div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="chart-daumau"></canvas>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Feature Adoption Breakdown</div>
+          <div class="panel-subtitle">% of active users with feature enabled</div>
+        </div>
+        <div class="panel-badge teal">ADOPTION</div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="chart-features"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ROW 3: Customer Journey + Ticket Stats -->
+  <div class="grid-2">
+
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Customer Journey Funnel</div>
+          <div class="panel-subtitle">Activation → Value → Expansion</div>
+        </div>
+        <div class="panel-badge amber">JOURNEY</div>
+      </div>
+      <div class="funnel" id="funnel-wrap">
+        <!-- JS generated -->
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Communication Effectiveness</div>
+          <div class="panel-subtitle">Email, in-app, and support channels</div>
+        </div>
+        <div class="panel-badge teal">COMMS</div>
+      </div>
+      <table class="comm-table" id="comm-table">
+        <thead>
+          <tr>
+            <th>Channel</th>
+            <th>Rate</th>
+            <th>Performance</th>
+            <th>Δ</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- JS generated -->
+        </tbody>
+      </table>
+      <div style="margin-top:16px;">
+        <div class="ticket-stats">
+          <div class="ticket-stat">
+            <div class="ticket-stat-val" style="color:var(--amber)">142</div>
+            <div class="ticket-stat-lbl">Open Tickets</div>
+          </div>
+          <div class="ticket-stat">
+            <div class="ticket-stat-val" style="color:var(--teal)">4.2h</div>
+            <div class="ticket-stat-lbl">Avg Resolution</div>
+          </div>
+          <div class="ticket-stat">
+            <div class="ticket-stat-val" style="color:var(--blue)">94%</div>
+            <div class="ticket-stat-lbl">CSAT Score</div>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chart-tickets" style="max-height:100px;"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ROW 4: Retention Signals + At-Risk -->
+  <div class="grid-2">
+
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Retention Signals</div>
+          <div class="panel-subtitle">Login freq · engagement score · health</div>
+        </div>
+        <div class="panel-badge teal">RETENTION</div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div class="chart-wrap">
+          <canvas id="chart-retention" style="max-height:180px;"></canvas>
+        </div>
+      </div>
+      <div class="dial-wrap">
+        <div class="dial-canvas-wrap">
+          <canvas id="chart-gauge" width="160" height="90"></canvas>
+          <div class="dial-value" id="dial-val">72</div>
+        </div>
+        <div class="dial-label">Overall Engagement Score</div>
+        <div class="dial-legend">
+          <div class="dial-legend-item"><div class="dial-legend-dot" style="background:var(--red)"></div>At-Risk 0–40</div>
+          <div class="dial-legend-item"><div class="dial-legend-dot" style="background:var(--amber)"></div>Watch 41–65</div>
+          <div class="dial-legend-item"><div class="dial-legend-dot" style="background:var(--teal)"></div>Healthy 66+</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">At-Risk Account Radar</div>
+          <div class="panel-subtitle">Accounts below engagement threshold</div>
+        </div>
+        <div class="panel-badge red">AT-RISK</div>
+      </div>
+      <div class="risk-list" id="risk-list">
+        <!-- JS generated -->
+      </div>
+    </div>
+
+  </div>
+
+</div><!-- /main -->
+
+<!-- FOOTER -->
+<div class="footer">
+  <span class="footer-text">NEXUSHQ OBSERVABILITY PLATFORM — B2B SAAS CUSTOMER ENGAGEMENT DASHBOARD — v1.0.0</span>
+  <span class="footer-members">NCI GROUP EXERCISE · CUSTOMER INTELLIGENCE MODULE</span>
 </div>
-<div class="card filter">
-<label for="cohort">User Cohort</label>
-<select id="cohort">
-<option value="all">All Cohorts</option>
-<option value="new">New Users (0-30d)</option>
-<option value="growth">Growth Users (31-90d)</option>
-<option value="mature">Mature Users (90d+)</option>
-</select>
-</div>
-</section>
 
- 
+<script>
+/* ══════════════════════════════════════════════════════════════
+   DATA DEFINITIONS
+   ══════════════════════════════════════════════════════════════ */
 
-    <section class="kpis" id="kpis"></section>
+const DATA = {
+  "30D": {
+    daumauRatio: 38, daumauDelta: "+3.2pp",   daumauTrend: [30,31,32,30,33,34,33,35,34,36,36,37,36,38,38,37,39,38,40,39,38,40,41,40,39,41,40,38,39,38],
+    sessionMin: 14,  sessionDelta: "-0.8m",
+    featAdopt: 62,   featDelta: "+7pp",
+    atRisk: 9,       atRiskDelta: "+2",
+    features: { "Analytics":88, "Automation":74, "Integrations":62, "Reporting":55, "AI Assist":38, "API Access":29 },
+    comms: [
+      { channel:"Onboarding Email",   rate:"41.2%", val:41.2, delta:"+2.1%", col:"#00d4aa" },
+      { channel:"In-App Messages",    rate:"18.7%", val:18.7, delta:"+0.5%", col:"#3b82f6" },
+      { channel:"Product Updates",    rate:"32.4%", val:32.4, delta:"-1.2%", col:"#a78bfa" },
+      { channel:"Re-engagement",      rate:"9.8%",  val:9.8,  delta:"-0.3%", col:"#f5a623" },
+    ],
+    retention: {
+      labels:["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],
+      logins:[312,298,340,288,325,180,142],
+    },
+    funnel: [
+      { step:"Sign-Up", pct:100, drop:null },
+      { step:"Activation", pct:81, drop:"-19%" },
+      { step:"Time-to-Value", pct:64, drop:"-17%" },
+      { step:"Feature Adoption", pct:48, drop:"-16%" },
+      { step:"Expansion", pct:29, drop:"-19%" },
+    ],
+    atRiskAccounts: [
+      { company:"Meridian Group",    score:18, meta:"Last login: 14d", level:"critical" },
+      { company:"BlueStar Financial",score:24, meta:"Last login: 9d",  level:"critical" },
+      { company:"Novum Systems",     score:31, meta:"Last login: 7d",  level:"critical" },
+      { company:"Apex Logistics",    score:41, meta:"Last login: 4d",  level:"warning" },
+      { company:"DeltaCraft Inc",    score:52, meta:"Last login: 3d",  level:"warning" },
+      { company:"SkyRoute Labs",     score:58, meta:"Last login: 2d",  level:"warning" },
+      { company:"Folio Dynamics",    score:69, meta:"Last login: 1d",  level:"healthy" },
+      { company:"Zenith Partners",   score:78, meta:"Last login: 0d",  level:"healthy" },
+    ],
+    engagementScore: 72,
+    tickets: [42,55,48,61,59,38,29,45,52,60,47,39,32,28],
+  },
+  "7D": {
+    daumauRatio: 41, daumauDelta: "+5.1pp",
+    sessionMin: 15, sessionDelta: "+0.4m",
+    featAdopt: 64, featDelta: "+2pp",
+    atRisk: 7, atRiskDelta: "-2",
+    features: { "Analytics":90, "Automation":76, "Integrations":65, "Reporting":58, "AI Assist":42, "API Access":31 },
+    comms: [
+      { channel:"Onboarding Email",  rate:"43.1%", val:43.1, delta:"+4.0%", col:"#00d4aa" },
+      { channel:"In-App Messages",   rate:"20.2%", val:20.2, delta:"+1.5%", col:"#3b82f6" },
+      { channel:"Product Updates",   rate:"30.8%", val:30.8, delta:"-3.0%", col:"#a78bfa" },
+      { channel:"Re-engagement",     rate:"11.1%", val:11.1, delta:"+1.3%", col:"#f5a623" },
+    ],
+    retention: {
+      labels:["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],
+      logins:[330,310,355,305,340,195,155],
+    },
+    daumauTrend:[36,37,38,38,40,39,41],
+    funnel: [
+      { step:"Sign-Up", pct:100, drop:null },
+      { step:"Activation", pct:84, drop:"-16%" },
+      { step:"Time-to-Value", pct:68, drop:"-16%" },
+      { step:"Feature Adoption", pct:51, drop:"-17%" },
+      { step:"Expansion", pct:32, drop:"-19%" },
+    ],
+    atRiskAccounts: [
+      { company:"Meridian Group",    score:20, meta:"Last login: 14d", level:"critical" },
+      { company:"BlueStar Financial",score:28, meta:"Last login: 8d",  level:"critical" },
+      { company:"Apex Logistics",    score:44, meta:"Last login: 3d",  level:"warning" },
+      { company:"DeltaCraft Inc",    score:55, meta:"Last login: 2d",  level:"warning" },
+      { company:"Folio Dynamics",    score:71, meta:"Last login: 1d",  level:"healthy" },
+      { company:"Zenith Partners",   score:80, meta:"Last login: 0d",  level:"healthy" },
+      { company:"CloudNine Tech",    score:82, meta:"Last login: 0d",  level:"healthy" },
+    ],
+    engagementScore: 76,
+    tickets: [8,11,9,13,10,6,7],
+  },
+  "90D": {
+    daumauRatio: 35, daumauDelta: "+1.4pp",
+    sessionMin: 13, sessionDelta: "-1.5m",
+    featAdopt: 58, featDelta: "+12pp",
+    atRisk: 12, atRiskDelta: "+5",
+    features: { "Analytics":84, "Automation":69, "Integrations":57, "Reporting":50, "AI Assist":30, "API Access":22 },
+    comms: [
+      { channel:"Onboarding Email",  rate:"38.4%", val:38.4, delta:"+0.8%", col:"#00d4aa" },
+      { channel:"In-App Messages",   rate:"16.2%", val:16.2, delta:"-2.0%", col:"#3b82f6" },
+      { channel:"Product Updates",   rate:"34.1%", val:34.1, delta:"+2.5%", col:"#a78bfa" },
+      { channel:"Re-engagement",     rate:"8.2%",  val:8.2,  delta:"-1.8%", col:"#f5a623" },
+    ],
+    retention: {
+      labels:["W1","W2","W3","W4","W5","W6","W7","W8","W9","W10","W11","W12","W13"],
+      logins:[280,295,310,290,320,305,315,298,330,310,325,340,308],
+    },
+    daumauTrend: Array.from({length:90},(_,i)=>28+Math.sin(i/6)*3+i/15),
+    funnel: [
+      { step:"Sign-Up", pct:100, drop:null },
+      { step:"Activation", pct:78, drop:"-22%" },
+      { step:"Time-to-Value", pct:60, drop:"-18%" },
+      { step:"Feature Adoption", pct:44, drop:"-16%" },
+      { step:"Expansion", pct:24, drop:"-20%" },
+    ],
+    atRiskAccounts: [
+      { company:"Meridian Group",    score:14, meta:"Last login: 21d", level:"critical" },
+      { company:"BlueStar Financial",score:19, meta:"Last login: 15d", level:"critical" },
+      { company:"Novum Systems",     score:25, meta:"Last login: 12d", level:"critical" },
+      { company:"Apex Logistics",    score:38, meta:"Last login: 6d",  level:"critical" },
+      { company:"DeltaCraft Inc",    score:47, meta:"Last login: 4d",  level:"warning" },
+      { company:"SkyRoute Labs",     score:53, meta:"Last login: 3d",  level:"warning" },
+      { company:"TerraSync Co",      score:60, meta:"Last login: 2d",  level:"warning" },
+      { company:"Folio Dynamics",    score:67, meta:"Last login: 1d",  level:"healthy" },
+    ],
+    engagementScore: 66,
+    tickets: Array.from({length:13},()=>Math.floor(30+Math.random()*30)),
+  },
+  "12M": {
+    daumauRatio: 33, daumauDelta: "+8.2pp",
+    sessionMin: 12, sessionDelta: "+2.1m",
+    featAdopt: 54, featDelta: "+18pp",
+    atRisk: 14, atRiskDelta: "+3",
+    features: { "Analytics":80, "Automation":62, "Integrations":50, "Reporting":44, "AI Assist":22, "API Access":18 },
+    comms: [
+      { channel:"Onboarding Email",  rate:"35.2%", val:35.2, delta:"+5.2%", col:"#00d4aa" },
+      { channel:"In-App Messages",   rate:"14.8%", val:14.8, delta:"+5.0%", col:"#3b82f6" },
+      { channel:"Product Updates",   rate:"29.6%", val:29.6, delta:"+8.1%", col:"#a78bfa" },
+      { channel:"Re-engagement",     rate:"7.1%",  val:7.1,  delta:"+2.0%", col:"#f5a623" },
+    ],
+    retention: {
+      labels:["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+      logins:[220,240,260,275,280,295,310,298,320,315,335,330],
+    },
+    daumauTrend: Array.from({length:12},(_,i)=>25+i*0.7+Math.sin(i)*1.5),
+    funnel: [
+      { step:"Sign-Up", pct:100, drop:null },
+      { step:"Activation", pct:76, drop:"-24%" },
+      { step:"Time-to-Value", pct:57, drop:"-19%" },
+      { step:"Feature Adoption", pct:40, drop:"-17%" },
+      { step:"Expansion", pct:21, drop:"-19%" },
+    ],
+    atRiskAccounts: [
+      { company:"Meridian Group",    score:12, meta:"Last login: 30d", level:"critical" },
+      { company:"BlueStar Financial",score:18, meta:"Last login: 22d", level:"critical" },
+      { company:"Novum Systems",     score:22, meta:"Last login: 18d", level:"critical" },
+      { company:"Apex Logistics",    score:35, meta:"Last login: 9d",  level:"critical" },
+      { company:"SkyRoute Labs",     score:50, meta:"Last login: 4d",  level:"warning" },
+      { company:"TerraSync Co",      score:56, meta:"Last login: 3d",  level:"warning" },
+      { company:"DeltaCraft Inc",    score:61, meta:"Last login: 2d",  level:"warning" },
+      { company:"CloudNine Tech",    score:72, meta:"Last login: 1d",  level:"healthy" },
+    ],
+    engagementScore: 63,
+    tickets: Array.from({length:12},(_,i)=>Math.floor(25+i*2.5+Math.sin(i)*5)),
+  }
+};
 
- 
+/* ══════════════════════════════════════════════════════════════
+   CHART DEFAULTS
+   ══════════════════════════════════════════════════════════════ */
+Chart.defaults.color = "#5a7294";
+Chart.defaults.font.family = "IBM Plex Mono";
+Chart.defaults.font.size = 10;
+Chart.defaults.plugins.legend.display = false;
+Chart.defaults.plugins.tooltip.backgroundColor = "#141d2b";
+Chart.defaults.plugins.tooltip.borderColor = "#1e2d42";
+Chart.defaults.plugins.tooltip.borderWidth = 1;
+Chart.defaults.plugins.tooltip.titleColor = "#c9d8ec";
+Chart.defaults.plugins.tooltip.bodyColor = "#5a7294";
+Chart.defaults.plugins.tooltip.padding = 10;
+Chart.defaults.plugins.tooltip.cornerRadius = 4;
 
-    <section class="sections">
-<article class="card">
-<h2 class="section-title">Engagement & Journey Trend</h2>
-<canvas id="trendChart" class="chart"></canvas>
-</article>
+/* ══════════════════════════════════════════════════════════════
+   STATE & CHARTS
+   ══════════════════════════════════════════════════════════════ */
+let currentPeriod = "30D";
+let charts = {};
 
- 
+function destroyChart(key) {
+  if (charts[key]) { charts[key].destroy(); delete charts[key]; }
+}
 
-      <article class="card">
-<h2 class="section-title">Feature Adoption Rates</h2>
-<div id="featureBars" class="bar-wrap"></div>
-</article>
+/* ── DAU/MAU Trend ─────────────────────────────── */
+function buildDauMauChart(d) {
+  destroyChart("daumau");
+  const trend = d.daumauTrend;
+  const labels = trend.map((_,i) => i % Math.ceil(trend.length/6) === 0 ? String(i+1) : "");
+  charts.daumau = new Chart(document.getElementById("chart-daumau"), {
+    type: "line",
+    data: {
+      labels,
+      datasets: [{
+        data: trend,
+        borderColor: "#00d4aa",
+        borderWidth: 2,
+        pointRadius: 0,
+        tension: 0.4,
+        fill: true,
+        backgroundColor: (ctx) => {
+          const g = ctx.chart.ctx.createLinearGradient(0,0,0,200);
+          g.addColorStop(0,"rgba(0,212,170,0.18)");
+          g.addColorStop(1,"rgba(0,212,170,0)");
+          return g;
+        }
+      }]
+    },
+    options: {
+      responsive: true,
+      animation: { duration: 600, easing: "easeInOutQuart" },
+      scales: {
+        x: { grid: { color: "#1e2d42", drawTicks: false }, border: { display: false } },
+        y: {
+          grid: { color: "#1e2d42", drawTicks: false }, border: { display: false },
+          ticks: { callback: v => v + "%" }
+        }
+      },
+      plugins: { tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y.toFixed(1)}%` } } }
+    }
+  });
+}
 
- 
+/* ── Feature Adoption Bar ───────────────────────── */
+function buildFeatureChart(d) {
+  destroyChart("features");
+  const entries = Object.entries(d.features).sort((a,b) => b[1]-a[1]);
+  charts.features = new Chart(document.getElementById("chart-features"), {
+    type: "bar",
+    data: {
+      labels: entries.map(e => e[0]),
+      datasets: [{
+        data: entries.map(e => e[1]),
+        backgroundColor: entries.map((_,i) => `rgba(0,212,170,${0.9 - i*0.11})`),
+        borderRadius: 2,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      animation: { duration: 600, easing: "easeInOutQuart" },
+      indexAxis: "y",
+      scales: {
+        x: {
+          max: 100,
+          grid: { color: "#1e2d42", drawTicks: false }, border: { display: false },
+          ticks: { callback: v => v + "%" }
+        },
+        y: { grid: { display: false }, border: { display: false } }
+      },
+      plugins: { tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.x}% of users` } } }
+    }
+  });
+}
 
-      <article class="card">
-<h2 class="section-title">Communication Effectiveness</h2>
-<div id="commBars" class="bar-wrap"></div>
-</article>
+/* ── Funnel ─────────────────────────────────────── */
+function buildFunnel(d) {
+  const wrap = document.getElementById("funnel-wrap");
+  wrap.innerHTML = "";
+  const colors = ["#00d4aa","#00b891","#00a07c","#008a68","#006f52"];
+  d.funnel.forEach((step, i) => {
+    const row = document.createElement("div"); row.className = "funnel-step";
+    row.innerHTML = `
+      <div class="funnel-step-name">${step.step}</div>
+      <div class="funnel-bar-wrap">
+        <div class="funnel-bar" style="width:0%;background:${colors[i]}">
+          <span class="funnel-bar-label">${step.pct}%</span>
+        </div>
+      </div>
+      <div class="funnel-pct">${step.pct}%</div>
+      <div class="funnel-drop">${step.drop || ""}</div>
+    `;
+    wrap.appendChild(row);
+    setTimeout(() => {
+      row.querySelector(".funnel-bar").style.width = step.pct + "%";
+    }, 50 + i * 80);
+  });
+}
 
- 
+/* ── Comm Table ─────────────────────────────────── */
+function buildCommTable(d) {
+  const tbody = document.querySelector("#comm-table tbody");
+  tbody.innerHTML = "";
+  d.comms.forEach(row => {
+    const isUp = row.delta.startsWith("+");
+    tbody.innerHTML += `
+      <tr>
+        <td>${row.channel}</td>
+        <td style="color:#fff;font-weight:600">${row.rate}</td>
+        <td>
+          <span class="bar-mini" style="width:${row.val * 1.8}px;background:${row.col}"></span>
+        </td>
+        <td style="color:${isUp ? 'var(--teal)' : 'var(--red)'}">${row.delta}</td>
+      </tr>
+    `;
+  });
+}
 
-      <article class="card">
-<h2 class="section-title">Retention Signals (At-Risk Accounts)</h2>
-<div id="signals" class="signals"></div>
-</article>
-</section>
+/* ── Support Ticket Trend ───────────────────────── */
+function buildTicketChart(d) {
+  destroyChart("tickets");
+  charts.tickets = new Chart(document.getElementById("chart-tickets"), {
+    type: "bar",
+    data: {
+      labels: d.tickets.map((_,i) => ""),
+      datasets: [{
+        data: d.tickets,
+        backgroundColor: d.tickets.map(v => v > 55 ? "rgba(240,64,64,0.6)" : "rgba(59,130,246,0.5)"),
+        borderRadius: 2,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      animation: { duration: 600 },
+      scales: {
+        x: { grid: { display: false }, border: { display: false }, ticks: { display: false } },
+        y: { grid: { color: "#1e2d42", drawTicks: false }, border: { display: false } }
+      },
+      plugins: { tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y} tickets` } } }
+    }
+  });
+}
 
- 
+/* ── Retention Login Freq ───────────────────────── */
+function buildRetentionChart(d) {
+  destroyChart("retention");
+  charts.retention = new Chart(document.getElementById("chart-retention"), {
+    type: "line",
+    data: {
+      labels: d.retention.labels,
+      datasets: [{
+        label: "Logins",
+        data: d.retention.logins,
+        borderColor: "#3b82f6",
+        borderWidth: 2,
+        pointRadius: 3,
+        pointBackgroundColor: "#3b82f6",
+        tension: 0.35,
+        fill: true,
+        backgroundColor: (ctx) => {
+          const g = ctx.chart.ctx.createLinearGradient(0,0,0,160);
+          g.addColorStop(0,"rgba(59,130,246,0.2)");
+          g.addColorStop(1,"rgba(59,130,246,0)");
+          return g;
+        }
+      }]
+    },
+    options: {
+      responsive: true,
+      animation: { duration: 600 },
+      scales: {
+        x: { grid: { color: "#1e2d42", drawTicks: false }, border: { display: false } },
+        y: { grid: { color: "#1e2d42", drawTicks: false }, border: { display: false } }
+      }
+    }
+  });
+}
 
-    <section class="card footer">
-      Includes: DAU/MAU ratio, session duration, activation rate, time-to-value, milestone completion,
-      email open rates, in-app CTR, support ticket trend, login frequency, engagement score, at-risk flags.
-<div class="members"><strong>Group Members:</strong> Donnie, [Add Member 2], [Add Member 3], [Add Member 4]</div>
-</section>
-</main>
+/* ── Engagement Gauge ───────────────────────────── */
+function buildGauge(score) {
+  destroyChart("gauge");
+  const pct = score / 100;
+  // Color: red < 0.4, amber 0.4-0.65, teal 0.65+
+  const color = pct < 0.4 ? "#f04040" : pct < 0.65 ? "#f5a623" : "#00d4aa";
+  document.getElementById("dial-val").textContent = score;
+  charts.gauge = new Chart(document.getElementById("chart-gauge"), {
+    type: "doughnut",
+    data: {
+      datasets: [{
+        data: [pct, 1 - pct],
+        backgroundColor: [color, "#1e2d42"],
+        borderWidth: 0,
+        circumference: 180,
+        rotation: 270,
+      }]
+    },
+    options: {
+      responsive: false,
+      cutout: "72%",
+      animation: { duration: 800, easing: "easeInOutQuart" },
+      plugins: { tooltip: { enabled: false } }
+    }
+  });
+}
 
- 
+/* ── At-Risk List ───────────────────────────────── */
+function buildRiskList(d) {
+  const list = document.getElementById("risk-list");
+  list.innerHTML = "";
+  d.atRiskAccounts.forEach(acc => {
+    const row = document.createElement("div");
+    row.className = `risk-row ${acc.level}`;
+    row.innerHTML = `
+      <div class="risk-company">${acc.company}</div>
+      <div class="risk-meta">${acc.meta}</div>
+      <div class="risk-score ${acc.level}">${acc.score}</div>
+      <div class="risk-tag ${acc.level}">${acc.level === "critical" ? "CRITICAL" : acc.level === "warning" ? "WATCH" : "HEALTHY"}</div>
+    `;
+    list.appendChild(row);
+  });
+}
 
-  <script>
-    const daily = [
-      { d: "2026-05-01", segment: "startup", cohort: "new", dauMau: 0.31, session: 17, activation: 42, ttv: 6.1, milestone: 39, email: 34, ctr: 5.6, tickets: 21, login: 3.1, score: 51 },
-      { d: "2026-05-03", segment: "startup", cohort: "growth", dauMau: 0.36, session: 19, activation: 47, ttv: 5.3, milestone: 44, email: 39, ctr: 6.3, tickets: 18, login: 3.6, score: 56 },
-      { d: "2026-05-06", segment: "mid-market", cohort: "growth", dauMau: 0.43, session: 22, activation: 53, ttv: 4.8, milestone: 49, email: 42, ctr: 6.8, tickets: 16, login: 4.2, score: 62 },
-      { d: "2026-05-09", segment: "mid-market", cohort: "mature", dauMau: 0.48, session: 24, activation: 58, ttv: 4.2, milestone: 56, email: 46, ctr: 7.1, tickets: 14, login: 4.9, score: 68 },
-      { d: "2026-05-12", segment: "enterprise-lite", cohort: "mature", dauMau: 0.52, session: 26, activation: 63, ttv: 3.9, milestone: 61, email: 49, ctr: 7.8, tickets: 12, login: 5.4, score: 74 },
-      { d: "2026-05-15", segment: "enterprise-lite", cohort: "growth", dauMau: 0.49, session: 25, activation: 60, ttv: 4.1, milestone: 59, email: 47, ctr: 7.4, tickets: 13, login: 5.0, score: 71 },
-      { d: "2026-05-18", segment: "mid-market", cohort: "new", dauMau: 0.41, session: 21, activation: 51, ttv: 5.0, milestone: 50, email: 41, ctr: 6.6, tickets: 17, login: 4.0, score: 60 },
-      { d: "2026-05-21", segment: "startup", cohort: "new", dauMau: 0.34, session: 18, activation: 45, ttv: 5.8, milestone: 43, email: 37, ctr: 6.0, tickets: 19, login: 3.4, score: 54 },
-      { d: "2026-05-24", segment: "enterprise-lite", cohort: "mature", dauMau: 0.55, session: 27, activation: 66, ttv: 3.6, milestone: 64, email: 52, ctr: 8.1, tickets: 11, login: 5.8, score: 78 },
-      { d: "2026-05-26", segment: "mid-market", cohort: "growth", dauMau: 0.46, session: 23, activation: 56, ttv: 4.6, milestone: 54, email: 44, ctr: 7.0, tickets: 15, login: 4.5, score: 65 }
-    ];
+/* ── KPI Cards ──────────────────────────────────── */
+function updateKPIs(d) {
+  document.getElementById("kv-daumau").innerHTML = `${d.daumauRatio}<span class="unit">%</span>`;
+  document.getElementById("kd-daumau").textContent = `${d.daumauDelta.startsWith("+") ? "▲" : "▼"} ${d.daumauDelta} vs prev period`;
+  document.getElementById("kd-daumau").className = `kpi-delta ${d.daumauDelta.startsWith("+") ? "up" : "down"}`;
 
- 
+  document.getElementById("kv-session").innerHTML = `${d.sessionMin}<span class="unit">m</span>`;
+  document.getElementById("kd-session").textContent = `${d.sessionDelta.startsWith("+") ? "▲" : "▼"} ${d.sessionDelta} vs prev period`;
+  document.getElementById("kd-session").className = `kpi-delta ${d.sessionDelta.startsWith("+") ? "up" : "warn"}`;
 
-    const features = [
-      { name: "Workflow Builder", val: 73 },
-      { name: "Automation Rules", val: 68 },
-      { name: "Team Inbox", val: 57 },
-      { name: "Journey Analytics", val: 64 },
-      { name: "Health Alerts", val: 49 }
-    ];
+  document.getElementById("kv-feat").innerHTML = `${d.featAdopt}<span class="unit">%</span>`;
+  document.getElementById("kd-feat").textContent = `▲ ${d.featDelta} vs prev period`;
 
- 
+  document.getElementById("kv-risk").innerHTML = `${d.atRisk}<span class="unit"></span>`;
+  document.getElementById("kd-risk").textContent = `${d.atRiskDelta.startsWith("+") ? "▲" : "▼"} ${d.atRiskDelta} vs prev period`;
+  document.getElementById("kd-risk").className = `kpi-delta ${d.atRiskDelta.startsWith("+") ? "down" : "up"}`;
+}
 
-    const riskAccounts = [
-      { name: "Alpha Freight", reason: "DAU drop 27% in 2 weeks", risk: "high" },
-      { name: "Northline HR", reason: "Low milestone completion", risk: "med" },
-      { name: "BlueNova Ops", reason: "Support tickets rising", risk: "med" },
-      { name: "Orbit Legal", reason: "Steady logins + high score", risk: "low" }
-    ];
+/* ══════════════════════════════════════════════════════════════
+   RENDER ALL
+   ══════════════════════════════════════════════════════════════ */
+function renderAll(period) {
+  const d = DATA[period];
+  updateKPIs(d);
+  buildDauMauChart(d);
+  buildFeatureChart(d);
+  buildFunnel(d);
+  buildCommTable(d);
+  buildTicketChart(d);
+  buildRetentionChart(d);
+  buildGauge(d.engagementScore);
+  buildRiskList(d);
+}
 
- 
+/* ══════════════════════════════════════════════════════════════
+   INTERACTIONS
+   ══════════════════════════════════════════════════════════════ */
+document.querySelectorAll("[data-period]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("[data-period]").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentPeriod = btn.dataset.period;
+    renderAll(currentPeriod);
+  });
+});
 
-    const $ = id => document.getElementById(id);
-    const startDate = $("startDate");
-    const endDate = $("endDate");
-    const segment = $("segment");
-    const cohort = $("cohort");
+// Segment / cohort selects just re-render with same data (simulated filter)
+["segment-select","cohort-select"].forEach(id => {
+  document.getElementById(id).addEventListener("change", () => renderAll(currentPeriod));
+});
 
- 
+/* ── Clock ───────────────────────────────────────── */
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getUTCHours()).padStart(2,"0");
+  const m = String(now.getUTCMinutes()).padStart(2,"0");
+  const s = String(now.getUTCSeconds()).padStart(2,"0");
+  document.getElementById("clock").textContent = `${h}:${m}:${s} UTC`;
+}
+setInterval(updateClock, 1000);
+updateClock();
 
-    startDate.value = "2026-05-01";
-    endDate.value = "2026-05-26";
-
- 
-
-    [startDate, endDate, segment, cohort].forEach(el => el.addEventListener("input", render));
-
- 
-
-    function filterData() {
-      const s = startDate.value;
-      const e = endDate.value;
-      return daily.filter(row => {
-        const dateOk = row.d >= s && row.d <= e;
-        const segOk = segment.value === "all" || row.segment === segment.value;
-        const cohOk = cohort.value === "all" || row.cohort === cohort.value;
-        return dateOk && segOk && cohOk;
-      });
-    }
-
- 
-
-    function avg(arr, key) {
-      if (!arr.length) return 0;
-      return arr.reduce((acc, item) => acc + item[key], 0) / arr.length;
-    }
-
- 
-
-    function setKpis(rows) {
-      const kpis = [
-        { name: "DAU/MAU", value: `${(avg(rows, "dauMau") * 100).toFixed(1)}%`, delta: "+3.2% vs prev" },
-        { name: "Session Duration", value: `${avg(rows, "session").toFixed(1)} min`, delta: "+1.1 min" },
-        { name: "Activation Rate", value: `${avg(rows, "activation").toFixed(0)}%`, delta: "+4.0 pts" },
-        { name: "Time-to-Value", value: `${avg(rows, "ttv").toFixed(1)} days`, delta: "-0.5 days" },
-        { name: "Milestone Completion", value: `${avg(rows, "milestone").toFixed(0)}%`, delta: "+3.5 pts" },
-        { name: "Engagement Score", value: `${avg(rows, "score").toFixed(0)}/100`, delta: "+5 pts" }
-      ];
-
- 
-
-      $("kpis").innerHTML = kpis.map(k => `
-<div class="card kpi">
-<div class="title">${k.name}</div>
-<div class="value">${k.value}</div>
-<div class="delta">${k.delta}</div>
-</div>
-      `).join("");
-    }
-
- 
-
-    function setBars(rows) {
-      const comm = [
-        { label: "Email Open Rate", value: avg(rows, "email") },
-        { label: "In-App Message CTR", value: avg(rows, "ctr") * 10 },
-        { label: "Support Ticket Trend", value: Math.max(0, 100 - avg(rows, "tickets") * 4) }
-      ];
-
- 
-
-      $("featureBars").innerHTML = features.map(f => barRow(f.name, f.val)).join("");
-      $("commBars").innerHTML = comm.map(c => barRow(c.label, c.value)).join("");
-    }
-
- 
-
-    function barRow(label, value) {
-      const v = Math.max(0, Math.min(100, value));
-      return `
-<div class="bar">
-<span>${label}</span>
-<div class="track"><div class="fill" style="width:${v}%"></div></div>
-<strong>${v.toFixed(0)}%</strong>
-</div>
-      `;
-    }
-
- 
-
-    function setSignals() {
-      $("signals").innerHTML = riskAccounts.map(r => `
-<div class="signal">
-<div>
-<strong>${r.name}</strong><br>
-<span style="color: var(--muted)">${r.reason}</span>
-</div>
-<span class="pill risk-${r.risk}">${r.risk.toUpperCase()}</span>
-</div>
-      `).join("");
-    }
-
- 
-
-    function drawTrend(rows) {
-      const canvas = $("trendChart");
-      const ctx = canvas.getContext("2d");
-      const dpr = window.devicePixelRatio || 1;
-      const w = canvas.clientWidth;
-      const h = canvas.clientHeight;
-      canvas.width = Math.floor(w * dpr);
-      canvas.height = Math.floor(h * dpr);
-      ctx.scale(dpr, dpr);
-
- 
-
-      ctx.clearRect(0, 0, w, h);
-
- 
-
-      if (!rows.length) {
-        ctx.fillStyle = "#9db8cf";
-        ctx.font = "14px Segoe UI";
-        ctx.fillText("No data for selected filters", 16, 28);
-        return;
-      }
-
- 
-
-      const values = rows.map(r => r.score);
-      const min = Math.min(...values) - 5;
-      const max = Math.max(...values) + 5;
-      const pad = 20;
-
- 
-
-      ctx.strokeStyle = "rgba(157, 184, 207, 0.25)";
-      ctx.lineWidth = 1;
-      for (let i = 0; i < 4; i++) {
-        const y = pad + ((h - pad * 2) / 3) * i;
-        ctx.beginPath();
-        ctx.moveTo(pad, y);
-        ctx.lineTo(w - pad, y);
-        ctx.stroke();
-      }
-
- 
-
-      ctx.beginPath();
-      values.forEach((v, i) => {
-        const x = pad + (i * (w - pad * 2)) / Math.max(1, values.length - 1);
-        const y = h - pad - ((v - min) / (max - min || 1)) * (h - pad * 2);
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      });
-      ctx.lineWidth = 2.5;
-      ctx.strokeStyle = "#19d3c5";
-      ctx.stroke();
-
- 
-
-      values.forEach((v, i) => {
-        const x = pad + (i * (w - pad * 2)) / Math.max(1, values.length - 1);
-        const y = h - pad - ((v - min) / (max - min || 1)) * (h - pad * 2);
-        ctx.beginPath();
-        ctx.arc(x, y, 3.5, 0, Math.PI * 2);
-        ctx.fillStyle = "#4ba3ff";
-        ctx.fill();
-      });
-    }
-
- 
-
-    function render() {
-      const rows = filterData();
-      setKpis(rows);
-      setBars(rows);
-      setSignals();
-      drawTrend(rows);
-    }
-
- 
-
-    window.addEventListener("resize", render);
-    render();
+/* ── Initial Render ─────────────────────────────── */
+renderAll("30D");
 </script>
 </body>
 </html>
-
